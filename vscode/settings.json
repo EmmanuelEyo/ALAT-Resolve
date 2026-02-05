@@ -1,0 +1,12 @@
+{
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "eslint.packageManager": "pnpm",
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.turbo": true
+    }
+}
