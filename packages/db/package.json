@@ -1,0 +1,13 @@
+{
+  "name": "@alat-resolve/db",
+  "version": "0.0.0",
+  "main": "src/mongo.ts",
+  "types": "src/mongo.ts",
+  "dependencies": {
+    "mongodb": "^7.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

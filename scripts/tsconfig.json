@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@db/*": ["../packages/db/src/*"]
+    },
+    "noEmit": true,
+    "module": "CommonJS",
+    "moduleResolution": "node"
+  },
+  "include": ["."]
+}
