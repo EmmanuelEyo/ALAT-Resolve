@@ -1,7 +1,18 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": [".next/**", "dist/**"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"],
+      "env": [
+        "MONGODB_URI",
+        "NEXTAUTH_SECRET",
+        "OTP_TTL_SECONDS",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_FROM"
+      ]
+    },
     "dev": { "cache": false },
     "lint": {}
   }
