@@ -1,0 +1,33 @@
+
+> web@0.1.0 build C:\Users\jayli\projects\alat-resolve\apps\web
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\jayli\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\jayli\projects\alat-resolve\pnpm-lock.yaml
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.2s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/dashboard/page.tsx:133:93
+Type error: Type '{ children: Element[]; href: string; key: number; component: string; className: string; }' is not assignable to type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+  Property 'component' does not exist on type 'IntrinsicAttributes & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps<any>> & LinkProps<...> & { ...; } & RefAttributes<...>'.
+
+[0m [90m 131 |[39m                       { id[33m:[39m [32m"#29910"[39m[33m,[39m subject[33m:[39m [32m"Double Debit"[39m[33m,[39m detail[33m:[39m [32m"Netflix Subscription"[39m[33m,[39m status[33m:[39m [32m"Resolved"[39m[33m,[39m statusColor[33m:[39m [32m"bg-green-50 text-green-600 border border-green-100"[39m[33m,[39m date[33m:[39m [32m"Aug 02, 2023"[39m }[33m,[39m
+ [90m 132 |[39m                     ][33m.[39mmap((row[33m,[39m i) [33m=>[39m (
+[31m[1m>[22m[39m[90m 133 |[39m                       [33m<[39m[33mLink[39m href[33m=[39m{[32m`/dashboard/disputes/${row.id.replace('#', '')}`[39m} key[33m=[39m{i} component[33m=[39m[32m"tr"[39m className[33m=[39m[32m"group hover:bg-zinc-50/50 transition-colors cursor-pointer table-row"[39m[33m>[39m
+ [90m     |[39m                                                                                             [31m[1m^[22m[39m
+ [90m 134 |[39m                         [33m<[39m[33mtd[39m className[33m=[39m[32m"px-8 py-6 text-sm font-bold text-zinc-900 tracking-tight"[39m[33m>[39m{row[33m.[39mid}[33m<[39m[33m/[39m[33mtd[39m[33m>[39m
+ [90m 135 |[39m                         [33m<[39m[33mtd[39m className[33m=[39m[32m"px-8 py-6"[39m[33m>[39m
+ [90m 136 |[39m                           [33m<[39m[33mdiv[39m className[33m=[39m[32m"text-sm font-bold text-zinc-900 tracking-tight"[39m[33m>[39m{row[33m.[39msubject}[33m<[39m[33m/[39m[33mdiv[39m[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.
