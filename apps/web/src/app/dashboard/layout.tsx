@@ -100,9 +100,9 @@ export default function DashboardLayout({
                     onClick={() => setIsProfileOpen(false)}
                   />
                   <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-xl border border-zinc-100 py-2 z-20 animate-in fade-in zoom-in duration-200 origin-top-right">
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
+                    <Link href="/dashboard/settings" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                       <Settings className="w-4 h-4" /> Settings
-                    </button>
+                    </Link>
                     <div className="h-px bg-zinc-50 my-1 mx-2" />
                     <button 
                       onClick={() => signOut({ callbackUrl: "/login" })}
