@@ -11,11 +11,14 @@ export async function proxy(req: NextRequest) {
   }
 
   // Verify token using shared secret
+  // Note: getToken will look for the session cookie. Since both apps are now on the same domain,
+  // the cookie set by the web app will be visible here.
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_BASE || "http://localhost:3000";
 
   if (!token) {
     // Redirect to web app's agent login
+    // We use the absolute URL for the login page to be safe
     return NextResponse.redirect(`${AUTH_BASE}/agent-login`);
   }
 

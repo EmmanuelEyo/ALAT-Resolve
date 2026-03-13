@@ -76,7 +76,7 @@ export default function AgentLoginPage() {
       });
       setLoading(false);
       if (result?.ok) {
-        window.location.href = process.env.NEXT_PUBLIC_AGENT_APP_URL || "http://localhost:3001";
+        window.location.href = "/agent";
       } else {
         setMsg((result as SignInResult)?.error || "Invalid TOTP");
       }
