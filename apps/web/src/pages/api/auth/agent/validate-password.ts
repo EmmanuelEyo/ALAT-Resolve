@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getDb } from "@db/mongo";
 import bcrypt from "bcryptjs";
+import speakeasy from "speakeasy";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
@@ -13,6 +14,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const valid = await bcrypt.compare(password, user.passwordHash || "");
   if (!valid) return res.status(401).json({ error: "invalid credentials" });
 
+  let setupRequired = false;
+  let otpauthUrl = "";
+
+  if (!user.totpSecret) {
+    const secret = speakeasy.generateSecret({
+      name: `Wema ALAT Resolve (${email})`,
+      length: 20,
+    });
+    
+    await db.collection("users").updateOne(
+      { _id: user._id },
+      { $set: { totpSecret: secret.base32 } }
+    );
+    
+    setupRequired = true;
+    otpauthUrl = secret.otpauth_url || "";
+  }
+
   // success: do not issue session yet — we need TOTP verification
-  return res.json({ ok: true });
+  return res.json({ ok: true, setupRequired, otpauth_url: otpauthUrl });
 }

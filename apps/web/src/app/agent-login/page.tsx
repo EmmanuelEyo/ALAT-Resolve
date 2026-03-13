@@ -25,6 +25,8 @@ export default function AgentLoginPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [setupRequired, setSetupRequired] = useState(false);
+  const [otpauthUrl, setOtpauthUrl] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const clearMsg = () => setMsg("");
@@ -48,6 +50,10 @@ export default function AgentLoginPage() {
       if (!res.ok) {
         setMsg(json?.error || "Invalid credentials");
         return;
+      }
+      if (json.setupRequired) {
+        setSetupRequired(true);
+        setOtpauthUrl(json.otpauth_url || "");
       }
       setStep("totp");
       setMsg("");
@@ -260,11 +266,27 @@ export default function AgentLoginPage() {
                 </div>
 
                 <div className="p-6 pt-10 flex flex-col items-center">
-                  <h2 className="text-xl font-bold text-zinc-900 mb-1 tracking-tight">Enter Authenticator Code</h2>
-                  <p className="text-zinc-400 text-[11px] font-medium mb-6 text-center leading-relaxed">
-                    Open your corporate authenticator app (e.g., <br />
-                    Microsoft Authenticator) to get your 6-digit code.
+                  <h2 className="text-xl font-bold text-zinc-900 mb-1 tracking-tight">
+                    {setupRequired ? "Set up 2FA" : "Enter Authenticator Code"}
+                  </h2>
+                  <p className="text-zinc-400 text-[11px] font-medium mb-4 text-center leading-relaxed">
+                    {setupRequired 
+                      ? "This is your first time logging in! Scan the QR code below with your corporate authenticator app (e.g., Microsoft/Google Authenticator), then enter the 6-digit code."
+                      : "Open your corporate authenticator app (e.g., Microsoft/Google Authenticator) to get your 6-digit code."}
                   </p>
+
+                  {setupRequired && otpauthUrl && (
+                    <div className="mb-6 flex flex-col items-center animate-in zoom-in duration-300">
+                      <div className="bg-white p-2 rounded-xl shadow-sm border border-zinc-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpauthUrl)}`} 
+                          alt="2FA QR Code" 
+                          className="w-32 h-32"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {msg && <div className="w-full p-2.5 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[10px] font-medium mb-5 text-center">{msg}</div>}
 
