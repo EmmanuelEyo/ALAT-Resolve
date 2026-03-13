@@ -257,7 +257,7 @@ export default function AgentLoginPage() {
             ) : (
               <div className="relative bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500 text-black">
                 {/* Visual Header with centered icon */}
-                <div className="h-24 bg-gradient-to-br from-[#AE328E]/5 via-[#AE328E]/10 to-transparent relative">
+                <div className="h-24 bg-linear-to-br from-[#AE328E]/5 via-[#AE328E]/10 to-transparent relative">
                    <div className="absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center border border-[#AE328E]/10">
                       <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center">
                          <Clock className="w-5 h-5 text-[#AE328E]" />
@@ -360,7 +360,7 @@ export default function AgentLoginPage() {
 
                 <div className="bg-zinc-50/50 p-4 border-t border-zinc-100 text-center flex items-center justify-center gap-2">
                   <Lock className="w-3 h-3 text-zinc-300" />
-                  <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-[0.1em]">Secured by Wema Bank</span>
+                  <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">Secured by Wema Bank</span>
                 </div>
               </div>
             )}
