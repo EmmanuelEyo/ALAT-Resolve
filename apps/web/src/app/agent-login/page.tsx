@@ -280,11 +280,19 @@ export default function AgentLoginPage() {
                       <div className="bg-white p-2 rounded-xl shadow-sm border border-zinc-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
-                          src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpauthUrl)}`} 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`} 
                           alt="2FA QR Code" 
                           className="w-32 h-32"
                         />
                       </div>
+                      <a 
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(otpauthUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 text-[10px] font-bold text-[#AE328E] hover:underline uppercase tracking-wider"
+                      >
+                        Can&apos;t see the QR code? Open in new tab
+                      </a>
                     </div>
                   )}
 
