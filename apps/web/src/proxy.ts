@@ -22,7 +22,7 @@ export async function proxy(req: NextRequest) {
 
   // 2. Public / Pass-through routes (with CORS injection for session)
   const isPublicAsset = pathname.startsWith("/_next") || pathname.includes(".") || pathname === "/favicon.ico" || pathname === "/next.svg" || pathname === "/vercel.svg";
-  const isAuthRoute = pathname.startsWith("/api/auth") || pathname === "/login" || pathname === "/agent-login" || pathname === "/";
+  const isAuthRoute = pathname.startsWith("/api/auth") || pathname === "/login" || pathname === "/signup" || pathname === "/agent-login" || pathname === "/";
 
   if (isPublicAsset || isAuthRoute) {
     const response = NextResponse.next();
@@ -76,6 +76,6 @@ export const config = {
     "/dashboard/:path*", 
     "/agent/:path*", 
     "/api/auth/session",
-    "/((?!api|_next|static|login|agent-login|favicon.ico).*)",
+    "/((?!api|_next|static|login|signup|agent-login|favicon.ico).*)",
   ],
 };

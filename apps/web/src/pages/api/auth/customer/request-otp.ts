@@ -3,8 +3,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import { getDb } from "@db/mongo"; // shared DB helper
 import { randomInt } from "crypto";
+import { Resend } from "resend";
 
 const genOtp = () => String(randomInt(100000, 999999));
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
@@ -34,8 +36,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     flow: "customer",
   });
 
-  // send SMS via Twilio or log for dev
-  console.log(`[DEV-OTP] customer=${identity} otp=${otp}`);
+  // send Email using Resend
+  console.log(`[DEV-OTP] Sending email to ${user.email} otp=${otp}`);
+  
+  if (user.email) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: "ALAT Resolve <onboarding@resend.dev>", // Replace with your verified domain in production
+        to: user.email,
+        subject: "Your Login Verification Code",
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code will expire in 5 minutes.</p>`,
+      });
+      
+      if (error) {
+        console.error("Resend API Error:", error);
+      } else {
+        console.log("Resend Success API Response:", data);
+      }
+    } catch (catchErr) {
+      console.error("Failed to send email via Resend (Network/Config):", catchErr);
+    }
+  }
 
-  return res.json({ ok: true });
+  // mask email: a***z@email.com
+  let maskedEmail = user.email;
+  if (user.email) {
+    const emailParts = user.email.split("@");
+    if (emailParts.length === 2 && emailParts[0].length >= 2) {
+      const name = emailParts[0];
+      maskedEmail = `${name[0]}***${name[name.length - 1]}@${emailParts[1]}`;
+    } else if (emailParts.length === 2) {
+      maskedEmail = `*@${emailParts[1]}`;
+    }
+  }
+
+  return res.json({ ok: true, maskedEmail });
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Transaction } from "@shared-types/transaction";
+import { Dispute } from "@shared-types/dispute";
 import {
   Search,
   Calendar,
@@ -24,18 +26,123 @@ import {
   CheckCircle2,
   Target,
   Info,
+  Apple,
+  Tv,
 } from "lucide-react";
 
 export default function ReportDisputePage() {
   const [step, setStep] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeDescription, setDisputeDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [session, setSession] = useState<{ user?: { email?: string; name?: string } } | null>(null);
 
-  const transactions = [
-    { id: '1', icon: <ShoppingCart className="w-6 h-6" />, name: 'Shoprite Ikeja Mall', date: 'Oct 24, 2023 • 02:45 PM', amount: '-₦12,450.00' },
-    { id: '2', icon: <Zap className="w-6 h-6" />, name: 'Ikeja Electric - Prepaid', date: 'Oct 23, 2023 • 10:12 AM', amount: '-₦5,000.00' },
-    { id: '3', icon: <Utensils className="w-6 h-6" />, name: 'The Place Restaurant', date: 'Oct 22, 2023 • 08:30 PM', amount: '-₦8,200.00' },
-    { id: '4', icon: <CreditCard className="w-6 h-6" />, name: 'Transfer to J. Doe', date: 'Oct 21, 2023 • 11:05 AM', amount: '-₦25,000.00' },
-  ];
+  useEffect(() => {
+    const fetchSessionAndTransactions = async () => {
+      try {
+        const sessionResponse = await fetch("/api/auth/session");
+        const sessionData = await sessionResponse.json();
+        setSession(sessionData);
+
+        if (sessionData?.user?.email) {
+          const transResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transactions?email=${sessionData.user.email}`);
+          const transData = (await transResponse.json()) as Transaction[];
+          setTransactions(transData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessionAndTransactions();
+  }, []);
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'shopping': return <ShoppingCart className="w-6 h-6" />;
+      case 'zap': return <Zap className="w-6 h-6" />;
+      case 'utensils': return <Utensils className="w-6 h-6" />;
+      case 'card': return <CreditCard className="w-6 h-6" />;
+      case 'apple': return <Apple className="w-6 h-6" />;
+      case 'netflix': return <Tv className="w-6 h-6" />;
+      default: return <CreditCard className="w-6 h-6" />;
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    const validFiles: File[] = [];
+    let error = null;
+
+    selectedFiles.forEach(file => {
+      const isValidType = ['image/png', 'image/jpeg', 'application/pdf'].includes(file.type);
+      const isValidSize = file.size <= 10 * 1024 * 1024;
+
+      if (!isValidType) {
+        error = "Please upload only PNG, JPG or PDF files.";
+      } else if (!isValidSize) {
+        error = "File size must be less than 10MB.";
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (error) {
+      setUploadError(error);
+      setTimeout(() => setUploadError(null), 3000);
+    }
+
+    setFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const selectedTransactionData = transactions.find(t => (t._id || t.id) === selectedTransaction);
+
+  const handleSubmit = async () => {
+    if (!selectedTransactionData || !session?.user?.email) return;
+
+    setIsSubmitting(true);
+    try {
+      const disputeData: Partial<Dispute> = {
+        id: `#${Math.floor(10000 + Math.random() * 90000)}`,
+        transactionId: selectedTransactionData._id || selectedTransactionData.id,
+        merchantName: selectedTransactionData.name,
+        amount: selectedTransactionData.amount,
+        reason: disputeReason,
+        description: disputeDescription,
+        userEmail: session.user.email,
+        status: 'In Review',
+        files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
+      };
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(disputeData),
+      });
+
+      if (res.ok) {
+        setStep(4);
+      } else {
+        alert("Failed to submit dispute. Please try again.");
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("An error occurred. Please check your connection.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-12 w-full relative">
@@ -62,7 +169,7 @@ export default function ReportDisputePage() {
             </div>
 
             {/* Line 1 */}
-            <div className={`absolute top-8 left-1/4 w-1/4 h-0.5 -z-0 ${step >= 2 ? 'bg-[#AE328E]' : 'bg-slate-200'}`}></div>
+            <div className={`absolute top-8 left-1/4 w-1/4 h-0.5 z-0 ${step >= 2 ? 'bg-[#AE328E]' : 'bg-slate-200'}`}></div>
 
             {/* Step 2 */}
             <div className="flex flex-col items-center gap-2 z-10 px-2 lg:bg-transparent bg-slate-50/50">
@@ -71,7 +178,7 @@ export default function ReportDisputePage() {
             </div>
 
             {/* Line 2 */}
-            <div className={`absolute top-8 right-1/4 w-1/4 h-0.5 -z-0 ${step >= 3 ? 'bg-[#AE328E]' : 'bg-slate-200'}`}></div>
+            <div className={`absolute top-8 right-1/4 w-1/4 h-0.5 z-0 ${step >= 3 ? 'bg-[#AE328E]' : 'bg-slate-200'}`}></div>
 
             {/* Step 3 */}
             <div className="flex flex-col items-center gap-2 z-10 px-2 lg:bg-transparent bg-slate-50/50">
@@ -108,38 +215,50 @@ export default function ReportDisputePage() {
                 <div className="w-20 text-center">Action</div>
               </div>
 
-              {transactions.map((tx) => (
-                <label 
-                  key={tx.id} 
-                  className={`group relative flex items-center p-4 rounded-xl border transition-all cursor-pointer ${
-                    selectedTransaction === tx.id 
-                    ? 'border-[#AE328E]/30 bg-[#AE328E]/5' 
-                    : 'border-slate-100 hover:border-[#AE328E]/30 hover:bg-[#AE328E]/5'
-                  }`}
-                >
-                  <div className="flex-1 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#AE328E] shadow-sm">
-                      {tx.icon}
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-20 bg-slate-50 rounded-xl border border-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-slate-500 font-medium">No recent transactions found.</p>
+                </div>
+              ) : (
+                transactions.map((tx) => (
+                  <label 
+                    key={tx._id || tx.id} 
+                    className={`group relative flex items-center p-4 rounded-xl border transition-all cursor-pointer ${
+                      selectedTransaction === (tx._id || tx.id) 
+                      ? 'border-[#AE328E]/30 bg-[#AE328E]/5' 
+                      : 'border-slate-100 hover:border-[#AE328E]/30 hover:bg-[#AE328E]/5'
+                    }`}
+                  >
+                    <div className="flex-1 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-[#AE328E] shadow-sm">
+                        {getTransactionIcon(tx.iconType)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{tx.name}</p>
+                        <p className="text-xs text-slate-500">{tx.date}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900">{tx.name}</p>
-                      <p className="text-xs text-slate-500">{tx.date}</p>
+                    <div className="w-32 text-right font-black text-slate-900">
+                      {tx.amount}
                     </div>
-                  </div>
-                  <div className="w-32 text-right font-black text-slate-900">
-                    {tx.amount}
-                  </div>
-                  <div className="w-20 flex justify-center">
-                    <input
-                      checked={selectedTransaction === tx.id}
-                      onChange={() => setSelectedTransaction(tx.id)}
-                      className="w-5 h-5 accent-[#AE328E] border-slate-300 focus:ring-2 focus:ring-[#AE328E] ring-offset-2 cursor-pointer"
-                      name="transaction"
-                      type="radio"
-                    />
-                  </div>
-                </label>
-              ))}
+                    <div className="w-20 flex justify-center">
+                      <input
+                        checked={selectedTransaction === (tx._id || tx.id)}
+                        onChange={() => setSelectedTransaction(tx._id || tx.id)}
+                        className="w-5 h-5 accent-[#AE328E] border-slate-300 focus:ring-2 focus:ring-[#AE328E] ring-offset-2 cursor-pointer"
+                        name="transaction"
+                        type="radio"
+                      />
+                    </div>
+                  </label>
+                ))
+              )}
             </div>
 
             {/* Footer Action */}
@@ -183,14 +302,15 @@ export default function ReportDisputePage() {
                   <select 
                     className="block w-full rounded-lg border-none bg-slate-50 text-slate-900 py-3 px-4 focus:ring-2 focus:ring-[#AE328E]/20 transition-all appearance-none outline-none font-medium cursor-pointer" 
                     id="reason"
-                    defaultValue=""
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
                   >
                     <option disabled value="">Select a reason...</option>
-                    <option value="duplicate">Duplicate Charge</option>
-                    <option value="unrecognized">Unrecognized Transaction</option>
-                    <option value="incorrect_amount">Incorrect Amount Charged</option>
-                    <option value="failed_atm">ATM Failed to Dispense Cash</option>
-                    <option value="merchandise_not_received">Merchandise Not Received</option>
+                    <option value="Duplicate Charge">Duplicate Charge</option>
+                    <option value="Unrecognized Transaction">Unrecognized Transaction</option>
+                    <option value="Incorrect Amount Charged">Incorrect Amount Charged</option>
+                    <option value="ATM Failed to Dispense Cash">ATM Failed to Dispense Cash</option>
+                    <option value="Merchandise Not Received">Merchandise Not Received</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                     <ChevronDown className="w-5 h-5" />
@@ -206,21 +326,31 @@ export default function ReportDisputePage() {
                   id="description" 
                   placeholder="Tell us more about the issue..." 
                   rows={4}
+                  value={disputeDescription}
+                  onChange={(e) => setDisputeDescription(e.target.value)}
                 ></textarea>
               </div>
               
               {/* Upload Evidence Zone */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Upload Evidence</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-[#AE328E]/30 border-dashed rounded-xl bg-[#AE328E]/5 hover:bg-[#AE328E]/10 transition-colors cursor-pointer group">
+                <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors cursor-pointer group ${uploadError ? 'border-red-300 bg-red-50' : 'border-[#AE328E]/30 bg-[#AE328E]/5 hover:bg-[#AE328E]/10'}`}>
                   <div className="space-y-2 text-center flex flex-col items-center">
-                    <div className="mx-auto h-12 w-12 text-[#AE328E] group-hover:scale-110 transition-transform flex items-center justify-center">
+                    <div className={`mx-auto h-12 w-12 group-hover:scale-110 transition-transform flex items-center justify-center ${uploadError ? 'text-red-500' : 'text-[#AE328E]'}`}>
                       <UploadCloud className="w-10 h-10" />
                     </div>
                     <div className="flex text-sm text-slate-600 justify-center">
                       <label className="relative cursor-pointer rounded-md font-bold text-[#AE328E] hover:underline focus-within:outline-none" htmlFor="file-upload">
-                        <span>Upload a file</span>
-                        <input className="sr-only" id="file-upload" name="file-upload" type="file" />
+                        <span>{uploadError || "Upload a file"}</span>
+                        <input 
+                          className="sr-only" 
+                          id="file-upload" 
+                          name="file-upload" 
+                          type="file" 
+                          multiple 
+                          accept=".png,.jpg,.jpeg,.pdf"
+                          onChange={handleFileChange}
+                        />
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
@@ -231,26 +361,30 @@ export default function ReportDisputePage() {
               
               {/* Previews */}
               <div className="flex flex-wrap gap-4 mt-4">
-                <div className="relative group">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#AE328E]/20 bg-slate-100 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="object-cover w-full h-full" alt="Receipt screenshot preview" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7dVLRoXenxdZfYeJIB-ESDtO6r1x4RP6T4e0J3wPZQVO8dYAFh3k4D9Ys-pPelVaSja6fLFhX3hpMXY2J0855C1oyIWsSN_Ni-VxZdBX15MWLQrwbjzT4kCEPHOwlnnJwEJK6a6ob8A3M5BgohKvV2tIES88BWffF8kVDviYNS4sw5u-La1BQSLlo-kDnhWrv0Sfa5nQ1sZZLFRXuozkvYYIzhYMLsWVi8QnCaB9krKdK7oyBILdxY3Fi9j4wNmkMHXRcTk-A_EA" />
+                {files.map((file, index) => (
+                  <div key={index} className="relative group animate-in fade-in zoom-in duration-200">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#AE328E]/20 bg-slate-100 flex items-center justify-center shadow-sm">
+                      {file.type.startsWith('image/') ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img 
+                          className="object-cover w-full h-full" 
+                          alt={file.name} 
+                          src={URL.createObjectURL(file)} 
+                        />
+                      ) : (
+                        <FileText className="w-8 h-8 text-[#AE328E]" />
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => removeFile(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10" 
+                      type="button"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <p className="text-[10px] text-center mt-1 text-slate-500 truncate w-20 px-1">{file.name}</p>
                   </div>
-                  <button className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors" type="button">
-                    <X className="w-3 h-3" />
-                  </button>
-                  <p className="text-[10px] text-center mt-1 text-slate-500 truncate w-20">receipt_01.jpg</p>
-                </div>
-                <div className="relative group">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#AE328E]/20 bg-slate-100 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="object-cover w-full h-full" alt="Mobile banking app screenshot preview" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUB43DivOljblhF5kFbP-LCm7aa2j_5vcvBVNUud7gme_O-w00-LZHO23yfXJeb-B05Nwwjy1rrTIfVt7Qzb8_lCnUAi7DMVOI0AqqHHcpDyxA61uHbdY0VdzEdAeS4kPz34-5q5fA5Y_L72O193NH21I8uva6P9OjNPlpxaQkWQgC9OhfDmVsA6QSIBoj2o4X_5nMQLh8IHH8JF5TJunoUzYMUzJrjPNfDdQexddC13vQxXXycQ3dzZA90L4zT07JMAfTu9MLhVM" />
-                  </div>
-                  <button className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors" type="button">
-                    <X className="w-3 h-3" />
-                  </button>
-                  <p className="text-[10px] text-center mt-1 text-slate-500 truncate w-20">screenshot.png</p>
-                </div>
+                ))}
               </div>
             </form>
 
@@ -266,8 +400,13 @@ export default function ReportDisputePage() {
               </button>
               <button 
                 onClick={() => setStep(3)}
-                className="flex items-center gap-2 px-10 py-3 rounded-xl bg-[#AE328E] text-white font-bold hover:bg-[#912876] shadow-lg shadow-[#AE328E]/25 transition-all" 
+                className={`flex items-center gap-2 px-10 py-3 rounded-xl font-bold transition-all ${
+                  !disputeReason || !disputeDescription
+                  ? 'bg-[#AE328E] opacity-50 cursor-not-allowed text-white'
+                  : 'bg-[#AE328E] text-white hover:bg-[#912876] shadow-lg shadow-[#AE328E]/25'
+                }`} 
                 type="button"
+                disabled={!disputeReason || !disputeDescription}
               >
                 Next Step
                 <ArrowRight className="w-5 h-5" />
@@ -288,17 +427,17 @@ export default function ReportDisputePage() {
                   </div>
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[#AE328E]/10 shadow-sm">
                     <div className="h-12 w-12 flex items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
-                      <ShoppingCart className="w-6 h-6" />
+                      {selectedTransactionData ? getTransactionIcon(selectedTransactionData.iconType) : <ShoppingCart className="w-6 h-6" />}
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-bold text-slate-900 text-base">Shoprite Ikeja Mall</p>
-                          <p className="text-sm text-slate-500">24 Oct 2023 • 14:32 PM</p>
+                          <p className="font-bold text-slate-900 text-base">{selectedTransactionData?.name || "No Transaction Selected"}</p>
+                          <p className="text-sm text-slate-500">{selectedTransactionData?.date || "N/A"}</p>
                         </div>
-                        <p className="font-black text-slate-900 text-lg">- ₦12,450.00</p>
+                        <p className="font-black text-slate-900 text-lg">{selectedTransactionData?.amount || "₦0.00"}</p>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold">Ref: WEMA-TRX-982341234</p>
+                      <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold">Ref: WEMA-TRX-{selectedTransactionData?._id?.slice(-8).toUpperCase() || "PENDING"}</p>
                     </div>
                   </div>
                 </div>
@@ -312,28 +451,33 @@ export default function ReportDisputePage() {
                   <div className="space-y-6">
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">Selected Reason</label>
-                      <p className="text-base font-semibold text-slate-800">Duplicate Billing / Charged Multiple Times</p>
+                      <p className="text-base font-semibold text-slate-800">{disputeReason || "No reason selected"}</p>
                     </div>
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">Your Description</label>
                       <p className="text-sm leading-relaxed text-slate-600 italic">
-                        &quot;I was charged twice for my monthly premium subscription. One charge was at 14:32 and another at 14:35 for the same amount. I only authorized one transaction.&quot;
+                        &quot;{disputeDescription || "No description provided."}&quot;
                       </p>
                     </div>
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">Attached Files</label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white">
-                          <ImageIcon className="text-[#AE328E] w-5 h-5 shrink-0" />
-                          <span className="text-sm font-medium truncate flex-1">netflix_receipt_v1.png</span>
-                          <span className="text-xs text-slate-400">1.2 MB</span>
+                      {files.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic">No files attached.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {files.map((file, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white shadow-sm">
+                              {file.type.startsWith('image/') ? (
+                                <ImageIcon className="text-[#AE328E] w-5 h-5 shrink-0" />
+                              ) : (
+                                <FileText className="text-[#AE328E] w-5 h-5 shrink-0" />
+                              )}
+                              <span className="text-sm font-medium truncate flex-1">{file.name}</span>
+                              <span className="text-xs text-slate-400">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white">
-                          <FileText className="text-[#AE328E] w-5 h-5 shrink-0" />
-                          <span className="text-sm font-medium truncate flex-1">bank_statement_oct.pdf</span>
-                          <span className="text-xs text-slate-400">450 KB</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -350,10 +494,13 @@ export default function ReportDisputePage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 pt-2">
                     <button 
-                      onClick={() => setStep(4)}
-                      className="flex-1 rounded-lg bg-[#AE328E] py-4 px-6 text-center text-base font-bold text-white shadow-lg shadow-[#AE328E]/25 hover:bg-[#912876] transition-all active:scale-[0.98]"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className={`flex-1 rounded-lg bg-[#AE328E] py-4 px-6 text-center text-base font-bold text-white shadow-lg shadow-[#AE328E]/25 transition-all active:scale-[0.98] ${
+                        isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#912876]'
+                      }`}
                     >
-                      Submit Dispute
+                      {isSubmitting ? "Submitting..." : "Submit Dispute"}
                     </button>
                     <button className="rounded-lg border border-slate-200 bg-white px-6 py-4 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
                       Save as Draft
@@ -368,7 +515,7 @@ export default function ReportDisputePage() {
                   <h3 className="text-lg font-bold text-slate-900 mb-4">What happens next?</h3>
                   <div className="space-y-6">
                     <div className="flex gap-4">
-                      <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
+                      <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
                         <FileCheck className="w-5 h-5" />
                       </div>
                       <div>
@@ -377,7 +524,7 @@ export default function ReportDisputePage() {
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
+                      <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
                         <Clock className="w-5 h-5" />
                       </div>
                       <div>
@@ -386,7 +533,7 @@ export default function ReportDisputePage() {
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
+                      <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-[#AE328E]/10 text-[#AE328E]">
                         <Mail className="w-5 h-5" />
                       </div>
                       <div>
@@ -402,7 +549,7 @@ export default function ReportDisputePage() {
                       Dispute FAQs
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
-                    <div className="my-3 h-[1px] bg-slate-200 w-full"></div>
+                    <div className="my-3 h-px bg-slate-200 w-full"></div>
                     <Link className="flex items-center justify-between text-sm font-semibold text-slate-700 hover:text-[#AE328E] transition-colors group" href="#">
                       Terms of Service
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -425,10 +572,10 @@ export default function ReportDisputePage() {
       {/* Step 4: Success Screen */}
       {step === 4 && (
         <div className="flex-1 flex flex-col items-center justify-center py-4 animate-in fade-in zoom-in-95 duration-500 w-full relative z-10">
-          <div className="max-w-[640px] w-full bg-white p-8 md:p-12 rounded-[2rem] shadow-sm border border-[#e42bee]/5 flex flex-col items-center text-center mx-auto">
+          <div className="max-w-[640px] w-full bg-white p-8 md:p-12 rounded-4xl shadow-sm border border-[#e42bee]/5 flex flex-col items-center text-center mx-auto">
             <div className="w-full max-w-[320px] mb-8">
               <div className="aspect-square w-full rounded-full bg-[#e42bee]/5 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#e42bee]/10 to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-tr from-[#e42bee]/10 to-transparent"></div>
                 <div className="relative z-10 size-48 flex items-center justify-center text-[#e42bee]">
                   <CheckCircle2 className="w-[120px] h-[120px]" strokeWidth={2} />
                 </div>

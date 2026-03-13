@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { User, Eye, EyeOff, ArrowRight, Lock, Smartphone, Clock, ChevronLeft } from "lucide-react";
+import { User, Eye, EyeOff, ArrowRight, Lock, Mail, Clock, ChevronLeft } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function CustomerLoginPage() {
+  const router = useRouter();
   const [step, setStep] = useState<"password" | "otp">("password");
   const [identity, setIdentity] = useState(""); // email or username
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [maskedEmail, setMaskedEmail] = useState("");
   const [timer, setTimer] = useState(45);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -49,7 +52,8 @@ export default function CustomerLoginPage() {
         return;
       }
       setStep("otp");
-      setMsg("OTP sent — check your phone");
+      if (json.maskedEmail) setMaskedEmail(json.maskedEmail);
+      setMsg("OTP sent — check your email");
     } catch {
       setLoading(false);
       setMsg("Network error");
@@ -189,14 +193,14 @@ export default function CustomerLoginPage() {
                 <div className="flex flex-col items-center text-center">
                   <div className="w-16 h-16 bg-[#AE328E]/5 rounded-2xl flex items-center justify-center mb-6">
                     <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center border border-[#AE328E]/10">
-                      <Smartphone className="w-6 h-6 text-[#AE328E]" />
+                      <Mail className="w-6 h-6 text-[#AE328E]" />
                     </div>
                   </div>
 
                   <h1 className="text-2xl font-bold text-zinc-900 mb-2">Verify your identity</h1>
                   <p className="text-zinc-500 mb-8 text-sm">
-                    We&apos;ve sent a 6-digit code to your mobile number <br />
-                    ending in <span className="font-semibold text-zinc-900">+234 **** 1234</span>
+                    We&apos;ve sent a 6-digit code to your email address <br />
+                    <span className="font-semibold text-zinc-900">{maskedEmail || identity}</span>
                   </p>
 
                   <div className="flex gap-2 mb-8">
@@ -268,7 +272,7 @@ export default function CustomerLoginPage() {
               {msg && <p className="mt-6 text-sm text-center text-[#AE328E] font-medium bg-[#AE328E]/5 p-3 rounded-lg border border-[#AE328E]/10">{msg}</p>}
 
               <div className="mt-8 text-center text-sm text-zinc-500">
-                Don&apos;t have an account? <button className="text-[#AE328E] font-semibold hover:underline">Sign Up</button>
+                Don&apos;t have an account? <button onClick={() => router.push("/signup")} className="text-[#AE328E] font-semibold hover:underline">Sign Up</button>
               </div>
 
               <div className="mt-8 pt-6 border-t border-zinc-50 flex items-center justify-center gap-2">

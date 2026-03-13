@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
+import { Dispute } from "@shared-types/dispute";
 
 type SessionShape = {
   user?: { name?: string; email?: string; role?: string };
@@ -28,14 +29,28 @@ type SessionShape = {
 export default function CustomerDashboard() {
   const [session, setSession] = useState<SessionShape | null>(null);
   const [loading, setLoading] = useState(true);
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((data) => setSession(data))
-      .catch(() => setSession(null))
-      .finally(() => setLoading(false));
+    const initDashboard = async () => {
+      try {
+        const sessionRes = await fetch("/api/auth/session");
+        const sessionData = await sessionRes.json();
+        setSession(sessionData);
+
+        if (sessionData?.user?.email) {
+          const disputesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes?email=${sessionData.user.email}`);
+          const disputesData = await disputesRes.json();
+          setDisputes(disputesData);
+        }
+      } catch (err) {
+        console.error("Failed to initialize dashboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initDashboard();
   }, []);
 
   return (
@@ -171,76 +186,53 @@ export default function CustomerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-50">
-                    {[
-                      {
-                        id: "#42991",
-                        subject: "POS Transaction Error",
-                        detail: "GTBank Terminal - Lagos",
-                        status: "In Review",
-                        statusColor:
-                          "bg-yellow-50 text-yellow-600 border border-yellow-100",
-                        date: "2 hrs ago",
-                      },
-                      {
-                        id: "#38821",
-                        subject: "Card Dispense Error",
-                        detail: "Wema ATM - Ikeja Branch",
-                        status: "Resolved",
-                        statusColor:
-                          "bg-green-50 text-green-600 border border-green-100",
-                        date: "Oct 20, 2023",
-                      },
-                      {
-                        id: "#31004",
-                        subject: "Transfer Failed",
-                        detail: "Mobile App Transfer",
-                        status: "Rejected",
-                        statusColor:
-                          "bg-red-50 text-red-600 border border-red-100",
-                        date: "Sep 15, 2023",
-                      },
-                      {
-                        id: "#29910",
-                        subject: "Double Debit",
-                        detail: "Netflix Subscription",
-                        status: "Resolved",
-                        statusColor:
-                          "bg-green-50 text-green-600 border border-green-100",
-                        date: "Aug 02, 2023",
-                      },
-                    ].map((row, i) => (
-                      <tr
-                        key={i}
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/disputes/${row.id.replace("#", "")}`,
-                          )
-                        }
-                        className="group hover:bg-zinc-50/50 transition-colors cursor-pointer"
-                      >
-                        <td className="px-8 py-6 text-sm font-bold text-zinc-900 tracking-tight">
-                          {row.id}
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="text-sm font-bold text-zinc-900 tracking-tight">
-                            {row.subject}
-                          </div>
-                          <div className="text-xs text-zinc-400 font-medium">
-                            {row.detail}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span
-                            className={`text-[10px] font-bold px-3 py-1 rounded-full tracking-wide inline-block ${row.statusColor}`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 text-sm font-medium text-zinc-500 text-right">
-                          {row.date}
+                    {disputes.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-12 text-center text-zinc-500 font-medium bg-zinc-50/50">
+                          No disputes found. Started disputes will appear here.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      disputes.map((row) => (
+                        <tr
+                          key={row._id || row.id}
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/disputes/${(row._id || row.id).replace("#", "")}`,
+                            )
+                          }
+                          className="group hover:bg-zinc-50/50 transition-colors cursor-pointer"
+                        >
+                          <td className="px-8 py-6 text-sm font-bold text-zinc-900 tracking-tight">
+                            {row.id}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="text-sm font-bold text-zinc-900 tracking-tight">
+                              {row.merchantName}
+                            </div>
+                            <div className="text-xs text-zinc-400 font-medium">
+                              {row.reason}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span
+                              className={`text-[10px] font-bold px-3 py-1 rounded-full tracking-wide inline-block ${
+                                row.status === 'Resolved' ? 'bg-green-50 text-green-600 border border-green-100' :
+                                row.status === 'Rejected' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                'bg-yellow-50 text-yellow-600 border border-yellow-100'
+                              }`}
+                            >
+                              {row.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-sm font-medium text-zinc-500 text-right">
+                            {new Date(row.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 
+                              ? "Today" 
+                              : new Date(row.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
                 <div className="p-4 bg-zinc-50/30 text-center border-t border-zinc-50">

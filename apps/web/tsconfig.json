@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@db/*": ["../../packages/db/src/*"]
+      "@db/*": ["../../packages/db/src/*"],
+      "@shared-types/*": ["../../packages/types/src/*"]
     }
   },
   "include": [
