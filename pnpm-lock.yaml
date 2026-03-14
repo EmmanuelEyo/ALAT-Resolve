@@ -45,9 +45,21 @@ importers:
 
   apps/agent:
     dependencies:
+      '@alat-resolve/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@auth/mongodb-adapter':
+        specifier: ^3.11.1
+        version: 3.11.1(mongodb@7.1.0)
+      bcryptjs:
+        specifier: ^3.0.3
+        version: 3.0.3
       lucide-react:
         specifier: ^0.473.0
         version: 0.473.0(react@19.2.3)
+      mongodb:
+        specifier: ^7.1.0
+        version: 7.1.0
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -60,6 +72,9 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      speakeasy:
+        specifier: ^2.0.0
+        version: 2.0.0
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4

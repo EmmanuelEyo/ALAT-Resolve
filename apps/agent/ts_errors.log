@@ -1,0 +1,3 @@
+src/pages/api/auth/[...nextauth].ts(5,27): error TS2307: Cannot find module '@db/clientPromise' or its corresponding type declarations.
+src/pages/api/auth/[...nextauth].ts(6,23): error TS2307: Cannot find module '@db/mongo' or its corresponding type declarations.
+src/pages/api/auth/agent/validate-password.ts(2,23): error TS2307: Cannot find module '@db/mongo' or its corresponding type declarations.

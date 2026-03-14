@@ -12,14 +12,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: '/agent/:path*',
-        destination: `${process.env.NEXT_PUBLIC_AGENT_APP_URL || 'http://localhost:3001'}/agent/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
